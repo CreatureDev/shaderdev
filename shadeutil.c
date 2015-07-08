@@ -1,9 +1,15 @@
 #include "SDL_opengl.h"
 #include "shadeutil.h"
+#include "hashlib.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#define MAX_TOK_CNT 12
+#define DELIM "\t "
+
+typedef int (*shvalfun)(void **ret, int argc, char *argv[]);
 
 struct shdesc
 {
@@ -23,34 +29,111 @@ struct shval
 
 static clock_t sclk = 0;
 
+static struct hashtable *shtbl = 0;
+
+static char *shvalstr[5] = 
+{
+	"VertexPos",
+	"GlobalTime",
+	"Value",
+	"Model",
+	"Texture"
+};
+
+static shvalfun SH_modelshval(void **ret, int argc, char *argv[])
+{
+
+	return 0;
+}
+
+static shvalfun SH_valueshval(void **ret, int argc, char *argv[])
+{
+
+	return 0;
+}
+
+static shvalfun SH_vertposshval(void **ret, int argc, char *argv[])
+{
+
+	return 0;
+}
+
+static shvalfun SH_textureshval(void **ret, int argc, char *argv[])
+{
+
+	return 0;
+}
+
+static shvalfun SH_globaltimeshval(void **ret, int argc, char *argv[])
+{
+
+	return 0;
+}
+
+static void SH_populateshtbl()
+{
+	insertpairhashtable(shtbl, (void *) shvalstr[0], (void *) SH_vertposshval);
+	insertpairhashtable(shtbl, (void *) shvalstr[1], (void *) SH_globaltimeshval);
+	insertpairhashtable(shtbl, (void *) shvalstr[2], (void *) SH_valueshval);
+	insertpairhashtable(shtbl, (void *) shvalstr[3], (void *) SH_modelshval);
+	insertpairhashtable(shtbl, (void *) shvalstr[4], (void *) SH_textureshval);
+}
+
 int SH_init()
 {
+	if(shtbl)
+		return 0;
+	
 	sclk = clock();
+	
+	shtbl = newhashtable(64, stringhash, stringcmp, 0, 0);
+	if(!shtbl)
+		return -1;
+	
+	SH_populateshtbl();
+	
 	return 0;
 }
 
 int SH_parsedescline(void **ret, const char *str)
 {
-	char *ln, *tmp;
-	struct shval *ret;
+	char *ln, *tok[MAX_TOK_CNT], *tmp;
+	unsigned int tcnt = 0;
+	int rval;
+	shvalfun fnc;
 	if(!strlen(str))
 		return -1;
 	ln = (char *) malloc(strlen(str) + 1);
 	strcpy(ln, str);
-	ret = (struct shval *) malloc(sizeof(struct shval));
-	tmp = strtok(ln, " ");
-	if(!tmp)
+	tmp = strtok(ln, DELIM);
+	while(tmp && tcnt < MAX_TOK_CNT)
 	{
-		free(ret);
-		return -1;
+		if(!strlen(tmp))
+		{
+			tmp = strtok(0, DELIM);
+			continue;
+		}
+		tok[tcnt++] = tmp;
+		tmp = strtok(0, DELIM);
 	}
-	if(!(ret->type = SH_valtype(tmp)))
+	if(tcnt < 2)
 	{
-		free(ret);
+		printf("incomplete descriptor line: %s\n", str);
+		free(ln);
 		return -1;
 	}
 	
+	fnc = (shvalfun) getdathashtable(shtbl, tok[0]);
+	if(!fnc)
+	{
+		printf("unknown descriptor type %s\n", tok[0]);
+		free(ln);
+		return -1;
+	}
+
+	rval = fnc(ret, tcnt, tok);
 	free(ln);
+	return rval;
 }
 
 int SH_parsedesc(void **ret, const char *fnam)
@@ -76,7 +159,7 @@ int SH_parsedesc(void **ret, const char *fnam)
 	while(fgets(buff, 1024, fl))
 	{
 		lcnt++;
-		if(strlen(buff) < 10)
+		if(strlen(buff) < 6)
 			continue;
 		if(SH_parsedescline((void **) &shv, buff))
 		{
@@ -95,7 +178,7 @@ int SH_printdesc(void *shd)
 {
 	struct shdesc *dsc = (struct shdesc *) shd;
 	
-	
+	return 0;
 }
 
 static void SH_freeshval(struct shval *ded)
@@ -108,8 +191,9 @@ static void SH_freeshval(struct shval *ded)
 
 }
 
-int SH_freedesc(void *shd)
+int SH_freedesc(void *shdp)
 {
+	struct shdesc *shd = (struct shdesc *) shdp;
 	if(!shd)
 		return -1;
 	if(shd->val)

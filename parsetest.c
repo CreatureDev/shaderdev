@@ -1,4 +1,5 @@
 #include "SDL.h"
+#include "SDL_opengl.h"
 #include "shadeutil.h"
 #include <stdio.h>
 
@@ -44,13 +45,8 @@ void initwindow()
 }
 
 int main(int argc, char **argv)
-{
+{	
 
-	if(SH_init())
-	{
-		printf("failed to initialize shader util\n");
-		return -1;
-	}
 	if(SDL_Init(SDL_INIT_VIDEO))
 	{
 		printf("failed to initialize SDL\n");
@@ -58,11 +54,23 @@ int main(int argc, char **argv)
 	}
 
 	initwindow();
-		
+
+	glClearColor(0.f, 0.f, 0.f, 1.f);
+
+	if(SH_init())
+	{
+		printf("failed to initialize shader util\n");
+		return -1;
+	}
 
 	for(argc = 0; argc < 100; argc++)
+	{
+		glClear(GL_COLOR_BUFFER_BIT);
 		SDL_GL_SwapWindow(wind);
-		
+	}	
+	
+	SDL_Quit();
+
 	return 0;
 }
 
