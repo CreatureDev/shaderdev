@@ -1,16 +1,17 @@
 .c.o:
-  $(CC) $(CFLG) -c $<
+	$(CC) $(CFLG) -c $<
 CC=gcc
-CFLG=-Wall -g `sdl2-config --cflags` `pkg-config gl --cflags`
+GLFLG=`pkg-config gl --cflags` -I/usr/include/GL/
+CFLG=-Wall -g `sdl2-config --cflags` $(GLFLG)
 LFLG=`sdl2-config --libs` -lGL
-OBJ=
-PRG=shadeparser
+OBJ=shadeutil.o
+PRG=parsetest
 
 all:$(PRG)
 
-shadeparser:shadeparser.o
-  $(CC) $(CFLG) -o $@ $^ $(LFLG);\
-  /bin/rm -f *.o
+parsetest:parsetest.o $(OBJ)
+	$(CC) $(CFLG) -o $@ $^ $(LFLG) ;\
+	/bin/rm -f *.o
 
 clean:
-  /bin/rm -f *.o a.out $(PRG)
+	/bin/rm -f *.o a.out $(PRG)
