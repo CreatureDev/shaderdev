@@ -1,7 +1,11 @@
-VertexPos vp vec3 FullScreen
-GlobalTime time float m
-GlobalTime tome float D
-Value rate float 4
-Value clr0 vec3 1 0.078 0.57647
-Value clr1 vec3 0 0.922 0.42353
+VertPos vp
+GlobalTime time
+Float rate
+Vec3 clr0
+Vec3 clr1
+Texture 8
+Texture 7
+Texture 2
+Normal nrm
+TexCoord tc
 

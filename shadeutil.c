@@ -1,209 +1,266 @@
-#include "SDL_opengl.h"
 #include "shadeutil.h"
-#include "hashlib.h"
+#include "SDL_opengl.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
-#define MAX_TOK_CNT 12
-#define DELIM "\t "
+#define GLTEXTURE(x) (GL_TEXTURE0 + x)
 
-typedef int (*shvalfun)(void **ret, int argc, char *argv[]);
+/*	special snowflake
+ *		Texture
+ *
+ *	ATTRIB	
+ *		VertPos
+ *		TexCoord
+ *		Normal
+ *
+ *	VALUE
+ *		GlobalTime
+ *		Int
+ *		Float
+ *		Vec(2, 3, 4)
+ *		Mat(2, 3, 4)
+*/
 
-struct shdesc
-{
-	unsigned int pid;
-	unsigned int *ddat;
-	void (*drawfun)(unsigned int *);
-	struct shval *val;
-};
+#define ATTRIBMASK 0xff
+#define VALUEMASK 0xff00
+#define TEXTURE 0x10000
 
-struct shval
+#define VertPosTYPE 0x01
+#define TexCoordTYPE 0x02
+#define NormalTYPE 0x03
+
+#define GlobalTimeTYPE 0x0100
+#define IntTYPE 0x0200
+#define FloatTYPE 0x0300
+#define Vec2TYPE 0x0400
+#define Vec3TYPE 0x0500
+#define Vec4TYPE 0x0600
+#define Mat2TYPE 0x0800
+#define Mat3TYPE 0x0900
+#define Mat4TYPE 0x0a00
+#define ProjMatTYPE 0x1000
+
+#define TextureTYPE TEXTURE
+
+#define strtype(x) if(!strcmp(str, #x)) return x ## TYPE;
+
+struct alist
 {
 	unsigned int type;
-	unsigned int vid;
+	char *name;
 	void *dat;
-	struct shval *next;
+	struct alist *next;
 };
 
-static clock_t sclk = 0;
-
-static struct hashtable *shtbl = 0;
-
-static char *shvalstr[5] = 
+struct tlist
 {
-	"VertexPos",
-	"GlobalTime",
-	"Value",
-	"Model",
-	"Texture"
+	unsigned int bind;
+	unsigned int glid;
+	char *file;
+	struct tlist *next;
 };
 
-static shvalfun SH_modelshval(void **ret, int argc, char *argv[])
+struct ulist
 {
+	unsigned int type;
+	char *name;
+	void *dat;
+	struct ulist *next;
+};
 
-	return 0;
-}
-
-static shvalfun SH_valueshval(void **ret, int argc, char *argv[])
+static struct
 {
-
-	return 0;
-}
-
-static shvalfun SH_vertposshval(void **ret, int argc, char *argv[])
-{
-
-	return 0;
-}
-
-static shvalfun SH_textureshval(void **ret, int argc, char *argv[])
-{
-
-	return 0;
-}
-
-static shvalfun SH_globaltimeshval(void **ret, int argc, char *argv[])
-{
-
-	return 0;
-}
-
-static void SH_populateshtbl()
-{
-	insertpairhashtable(shtbl, (void *) shvalstr[0], (void *) SH_vertposshval);
-	insertpairhashtable(shtbl, (void *) shvalstr[1], (void *) SH_globaltimeshval);
-	insertpairhashtable(shtbl, (void *) shvalstr[2], (void *) SH_valueshval);
-	insertpairhashtable(shtbl, (void *) shvalstr[3], (void *) SH_modelshval);
-	insertpairhashtable(shtbl, (void *) shvalstr[4], (void *) SH_textureshval);
-}
-
-int SH_init()
-{
-	if(shtbl)
-		return 0;
+	unsigned int vcnt;
+	unsigned int vab;
 	
-	sclk = clock();
+	struct alist *al;
+
+	struct tlist *tl;
 	
-	shtbl = newhashtable(64, stringhash, stringcmp, 0, 0);
-	if(!shtbl)
-		return -1;
-	
-	SH_populateshtbl();
-	
-	return 0;
+	struct ulist *ul;
+} datdef = {0};
+
+static void loadmodel(const char *mnam)
+{
+
 }
 
-int SH_parsedescline(void **ret, const char *str)
+static void askattribdata()
 {
-	char *ln, *tok[MAX_TOK_CNT], *tmp;
-	unsigned int tcnt = 0;
-	int rval;
-	shvalfun fnc;
-	if(!strlen(str))
-		return -1;
-	ln = (char *) malloc(strlen(str) + 1);
-	strcpy(ln, str);
-	tmp = strtok(ln, DELIM);
-	while(tmp && tcnt < MAX_TOK_CNT)
-	{
-		if(!strlen(tmp))
-		{
-			tmp = strtok(0, DELIM);
-			continue;
-		}
-		tok[tcnt++] = tmp;
-		tmp = strtok(0, DELIM);
-	}
-	if(tcnt < 2)
-	{
-		printf("incomplete descriptor line: %s\n", str);
-		free(ln);
-		return -1;
-	}
-	
-	fnc = (shvalfun) getdathashtable(shtbl, tok[0]);
-	if(!fnc)
-	{
-		printf("unknown descriptor type %s\n", tok[0]);
-		free(ln);
-		return -1;
-	}
 
-	rval = fnc(ret, tcnt, tok);
-	free(ln);
-	return rval;
 }
 
-int SH_parsedesc(void **ret, const char *fnam)
+static void asktexturedata()
 {
-	int lcnt;
-	ret = 0;
-	struct shdesc *dsc;
-	struct shval *shv;
+
+}
+
+static void askuniformdata()
+{
+
+}
+
+static void askshaderdat()
+{
 	char buff[1024];
-	FILE *fl = fopen(fnam, "r");
-	if(!fl)
+	if(datdef.al)
 	{
-		printf("failed to open shader descriptor file %s\n", fnam);
-		return -1;
-	}	
-	
-	dsc = (struct shdesc *) malloc(sizeof(struct shdesc));
-	dsc->pid = 0;
-	dsc->ddat = 0;
-	dsc->drawfun = 0;
-	dsc->val = 0;
-	lcnt = 0;
-	while(fgets(buff, 1024, fl))
-	{
-		lcnt++;
-		if(strlen(buff) < 6)
-			continue;
-		if(SH_parsedescline((void **) &shv, buff))
+		printf("Load attribute data from a file? (y/n)\n")
+		gets(buff);
+		if(buff[0] == 'y')
 		{
-			printf("failed to parse %s line %d\n", fnam, lcnt);
-			SH_freedesc((void *) dsc);
-			return -1;
+			printf("what is the path to the model?\n");
+			gets(buff);
+			loadmodel(buff);
 		}
+		else
+			askattribdata();
+	}
+	if(datdef.tl)
+		asktexturedata();
+	if(datdef.ul)
+		askuniformdata();
+}
+
+static unsigned int gettype(const char *str)
+{
+	strtype(VertPos)
+	strtype(Normal)
+	strtype(TexCoord)
+	
+	strtype(GlobalTime)
+	strtype(Float)
+	strtype(Int)
+	strtype(Vec2)
+	strtype(Vec3)
+	strtype(Vec4)
+	strtype(Mat2)
+	strtype(Mat3)
+	strtype(Mat4)
+	strtype(ProjMat)
+
+	strtype(Texture)
+
+	return 0;
+}
+
+void getshaderdat(const char *fl)
+{
+	char buff[1024], tmp[1024], *t, *n;
+	unsigned int i;
+	FILE *dsc = fopen(fl, "r");
+	struct alist **atl;
+	struct tlist **tel;
+	struct ulist **unl;
+	
+	if(!dsc)
+	{
+		printf("failed to open desc file\n");
+		exit(-1);
+	}
+
+	while(fgets(buff, 1024, dsc))
+	{
+		i = strlen(buff) - 1;
+		if(buff[i] == '\n')
+			buff[i--] = '\0';
+		
+		if(strlen(buff) < 4)
+			continue;
+		strcpy(tmp, buff);
+		t = strtok(buff, " ");
+		n = strtok(0, " ");
+		if(!n || !strlen(t) || !strlen(n))
+		{
+			printf("ERROR: encountered line with improper format\n");
+			printf("%s\n", tmp);
+			exit(-1);
+		}
+		
+		i = gettype(t);
+		
+		if(i & ATTRIBMASK)
+			goto ADDATTRIB;
+
+		if(i & VALUEMASK)
+			goto ADDVALUE;
+		
+		if(i & TEXTURE)
+			goto ADDTEXTURE;
+		
+		printf("Identifier %s has unknown type\n", t);
+		exit(-1);
+
+ADDATTRIB:
+		atl = &datdef.al;
+		while(*atl)
+		{
+			if((*atl)->type == i)
+			{
+				printf("two definitions for attribute %s\n", t);
+				exit(-1);
+			}
+			if(!strcmp((*atl)->name, n))
+			{
+				printf("attribute name %s given twice\n", n);
+				exit(-1);
+			}
+			atl = &(*atl)->next;
+		}
+
+		*atl = (struct alist *) malloc(sizeof(struct alist));
+		(*atl)->type = i;
+		(*atl)->name = (char *) malloc(strlen(n) + 1);
+		strcpy((*atl)->name, n);
+		(*atl)->dat = 0; 
+		(*atl)->next = 0;
+		goto GONEXT;
+
+
+ADDVALUE:
+		unl = &datdef.ul;
+		while(*unl)
+		{
+			if(!strcmp((*unl)->name, n))
+			{
+				printf("uniform name %s given twice\n", n);
+				exit(-1);
+			}
+			unl = &(*unl)->next;
+		}
+
+		*unl = (struct ulist *) malloc(sizeof(struct ulist));
+		(*unl)->type = i;
+		(*unl)->name = (char *) malloc(strlen(n) + 1);
+		strcpy((*unl)->name, n);
+		(*unl)->dat = 0;
+		(*unl)->next = 0;
+		goto GONEXT;
+
+ADDTEXTURE:
+		tel = &datdef.tl;
+		i = atoi(n);
+		while(*tel)
+		{
+			if((*tel)->bind == i)
+			{
+				printf("texture bind location %d given twice\n", i);
+				exit(-1);
+			}
+			tel = &(*tel)->next;
+		}
+		
+		*tel = (struct tlist *) malloc(sizeof(struct tlist));
+		(*tel)->bind = i;
+		(*tel)->glid = 0;
+		(*tel)->file = 0;
+		(*tel)->next = 0;
+GONEXT:
+		continue;
 	}
 	
 
-	fclose(fl);
-	return 0;
-}
-
-int SH_printdesc(void *shd)
-{
-	struct shdesc *dsc = (struct shdesc *) shd;
-	
-	return 0;
-}
-
-static void SH_freeshval(struct shval *ded)
-{
-	if(ded->next)
-		SH_freeshval(ded->next);
-	if(ded->dat)
-		free(ded->dat);
-	free(ded);
-
-}
-
-int SH_freedesc(void *shdp)
-{
-	struct shdesc *shd = (struct shdesc *) shdp;
-	if(!shd)
-		return -1;
-	if(shd->val)
-		SH_freeshval(shd->val);
-	shd->drawfun = 0;
-	if(shd->ddat)
-		free(shd->ddat);
-	if(shd->pid)
-		glDeleteProgram(shd->pid);
-	free(shd);
-	return 0;
+	askshaderdat();
 }
 
