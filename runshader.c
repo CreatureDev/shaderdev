@@ -17,6 +17,7 @@
 static SDL_Window *wind = 0;
 static SDL_GLContext glct = 0;
 
+
 static struct 
 {
 	char *comp;
