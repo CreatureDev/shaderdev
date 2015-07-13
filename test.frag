@@ -1,4 +1,4 @@
-#version 130
+#version 440
 
 uniform float time;
 uniform float rate;
