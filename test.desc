@@ -3,9 +3,4 @@ GlobalTime time
 Float rate
 Vec3 clr0
 Vec3 clr1
-Texture 8
-Texture 7
-Texture 2
-Normal nrm
-TexCoord tc
 
