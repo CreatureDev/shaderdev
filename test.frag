@@ -1,4 +1,4 @@
-#version 440
+#version 130
 
 uniform float time;
 uniform float rate;
@@ -19,9 +19,6 @@ void main()
 	float dist, v1, v2;
 	vec3 pix;
 	getdist(dist);	
-	v1 = sin(dist * rate + time);
-	v2 = cos(dist * rate + time);
-	pix = clr0 * v1 + clr1 * v2;
-	color = vec4(pix, 1);
+	color = vec4(clr0, 1);
 }
 
