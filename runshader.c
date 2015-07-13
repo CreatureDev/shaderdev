@@ -1,6 +1,8 @@
 #include "SDL.h"
-#include "SDL_opengl.h"
+#include "SDL_image.h"
 #include "shadeutil.h"
+#include "gl.h"
+#include "glext.h"
 #include <stdio.h>
 
 #define CHECKTYPE(x) if(!shades.x) {printf("%s shader component not found!\n", #x); exit(-1);}
@@ -15,8 +17,11 @@
 #define COMPTYPE 7
 
 static SDL_Window *wind = 0;
+static SDL_Renderer *rend = 0;
 static SDL_GLContext glct = 0;
 
+static unsigned int glp;
+static unsigned int vao;
 
 static struct 
 {
@@ -28,6 +33,74 @@ static struct
 	char *tevl;
 	char *vert;
 } shades = {0};
+
+static void compileattach(const char *shn, unsigned int gt)
+{
+	FILE *fl;
+	char *src;
+	unsigned int sid;
+	int st;
+	long l;
+	fl = fopen(shn, "r");
+	if(!fl)
+	{
+		printf("failed to open shader %s\n", shn);
+		exit(-1);
+	}
+	fseek(fl, 0, SEEK_END);
+	l = ftell(fl);
+	fseek(fl, 0, SEEK_SET);
+	src = (char *) calloc(l+1, 1);
+	fread(src, 1, l, fl);
+	fclose(fl);
+	sid = glCreateShader(gt);
+	glShaderSource(sid, 1, &src, 0);
+	glCompileShader(sid);	
+
+	glGetShaderiv(sid, GL_COMPILE_STATUS, &st);
+	if(!st)
+	{
+		printf("failed to compile shader %s\n", shn);
+		glGetShaderInfoLog(sid, l, 0, src);
+		printf("%s", src);
+		exit(-1);
+	}
+	glAttachShader(glp, sid);
+
+	glDeleteShader(sid);
+
+	free(src);
+}
+
+static void makeprogram()
+{
+	char buff[2048];
+	int st;
+	glp = glCreateProgram();
+	if(shades.comp)
+		compileattach(shades.comp, GL_COMPUTE_SHADER);
+	if(shades.frag)
+		compileattach(shades.frag, GL_FRAGMENT_SHADER);
+	if(shades.geom)
+		compileattach(shades.geom, GL_GEOMETRY_SHADER);
+	if(shades.tctl)
+		compileattach(shades.tctl, GL_TESS_CONTROL_SHADER);
+	if(shades.tevl)
+		compileattach(shades.tevl, GL_TESS_EVALUATION_SHADER);
+	if(shades.vert)
+		compileattach(shades.vert, GL_VERTEX_SHADER);
+	
+	glLinkProgram(glp);
+	glGetProgramiv(glp, GL_LINK_STATUS, &st);
+	if(!st)
+	{
+		printf("failed to link shader program\n");
+		glGetProgramInfoLog(glp, 2048, 0, buff);
+		printf("%s", buff);
+		exit(-1);
+	}
+	glUseProgram(glp);
+}
 
 void initwindow(const char *shnm)
 {
@@ -43,6 +116,7 @@ void initwindow(const char *shnm)
 	{
 		if(wind)
 		{
+			SDL_DestroyRenderer(rend);
 			SDL_DestroyWindow(wind);
 			wind = 0;
 		}
@@ -56,6 +130,7 @@ void initwindow(const char *shnm)
 				SDL_WINDOW_FULLSCREEN_DESKTOP |
 				SDL_WINDOW_OPENGL);
 
+		rend = SDL_CreateRenderer(wind, -1, SDL_RENDERER_ACCELERATED);
 		glct = SDL_GL_CreateContext(wind);
 
 		if(glct)
@@ -183,17 +258,37 @@ int main(int argc, char **argv)
 		return -1;
 	}	
 
+	IMG_Init(IMG_INIT_PNG);
+
 	initwindow(argv[1]);
 
 	glClearColor(0.f, 0.f, 0.f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	SDL_GL_SwapWindow(wind);
+	
+	makeprogram();
+	
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+	bindshaderdat(glp, rend);
 
+	SDL_GL_SetSwapInterval(1);
 
-
-	for(argc = 0; argc < 100; argc++)
+	SDL_Event e;
+	for(;;) 
 	{
+		while(SDL_PollEvent(&e))
+			if(e.type == SDL_QUIT) 
+				goto QUITIT;
 		glClear(GL_COLOR_BUFFER_BIT);
+		updateshader(glp);
+		rendershader();
+		glFinish();
 		SDL_GL_SwapWindow(wind);
-	}	
+	}
+
+
+QUITIT:
 	
 	SDL_Quit();
 

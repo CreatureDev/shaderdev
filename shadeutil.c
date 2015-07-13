@@ -1,5 +1,10 @@
 #include "shadeutil.h"
-#include "SDL_opengl.h"
+#include "gl.h"
+#include "glext.h"
+#include "SDL_image.h"
+#include "SDL_surface.h"
+#include "SDL_render.h"
+#include "SDL_error.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -90,6 +95,148 @@ static struct
 	
 	struct ulist *ul;
 } datdef = {0};
+
+void updateshader(unsigned int gid)
+{
+	struct ulist *uni = datdef.ul;
+	float fval;
+	unsigned int ind;
+	while(uni)
+	{
+		if(uni->type == GlobalTimeTYPE)
+		{
+			fval = clock() - *((clock_t *) uni->dat);
+			fval /= CLOCKS_PER_SEC;
+			ind = glGetUniformLocation(gid, uni->name);
+			glUniform1f(ind, fval);
+		}
+		uni = uni->next;
+	}
+}
+
+void rendershader()
+{
+	glDrawElements(GL_TRIANGLES, datdef.ecnt, GL_UNSIGNED_INT, 0);
+	glFinish();
+}
+
+static unsigned int bufs[2];
+
+void bindshaderdat(unsigned int gid, void *rnd)
+{
+	struct alist *atr;
+	struct tlist *tex;
+	struct ulist *uni;
+	unsigned int ind, off, len;
+	SDL_Surface *img;
+	SDL_Texture *txt;
+	float *fp, fval;
+	int ival;
+	atr = datdef.al;
+	glGenBuffers(2, bufs);
+	glBindBuffer(GL_ARRAY_BUFFER, bufs[0]);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufs[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 8 * datdef.vcnt, 0, GL_DYNAMIC_DRAW);
+	while(atr)
+	{
+		ind = glGetAttribLocation(gid, atr->name);
+		glEnableVertexAttribArray(ind);
+		switch(atr->type)
+		{
+		case TexCoordTYPE:
+			off = sizeof(float) * 3 * datdef.vcnt;
+			len = sizeof(float) * 2 * datdef.vcnt;
+			glBufferSubData(GL_ARRAY_BUFFER, off, len, atr->dat);
+			glVertexAttribPointer(ind, 2, GL_FLOAT, 0, 0, (void *) off);
+			break;
+		case VertPosTYPE:
+			off = 0;
+			len = sizeof(float) * 3 * datdef.vcnt;
+			glBufferSubData(GL_ARRAY_BUFFER, off, len, atr->dat);
+			glVertexAttribPointer(ind, 3, GL_FLOAT, 0, 0, (void *) off);
+			break;
+		case NormalTYPE:
+			off = sizeof(float) * 5 * datdef.vcnt;
+			len = sizeof(float) * 3 * datdef.vcnt;
+			glBufferSubData(GL_ARRAY_BUFFER, off, len, atr->dat);
+			glVertexAttribPointer(ind, 3, GL_FLOAT, 0, 0, (void *) off);
+			break;
+		}
+		atr = atr->next;
+	}
+	
+	tex = datdef.tl;
+	while(tex)
+	{
+		glActiveTexture(GLTEXTURE(tex->bind));
+		img = IMG_Load(tex->file);
+		if(!img)
+		{
+			printf("failed to load texture %s\n", tex->file);
+			exit(-1);
+		}
+		txt = SDL_CreateTextureFromSurface(rnd, img);
+		if(SDL_GL_BindTexture(txt, 0, 0))
+		{
+			printf("filed to bind texture %s to opengl\n", tex->file);
+			printf("%s\n", SDL_GetError());
+			exit(-1);
+		}
+		SDL_FreeSurface(img);
+		tex = tex->next;
+	}
+
+	uni = datdef.ul;
+	while(uni)
+	{
+		ind = glGetUniformLocation(gid, uni->name);
+		switch(uni->type)
+		{
+		case GlobalTimeTYPE:
+			fval = clock() - *((clock_t *) uni->dat);
+			fval /= CLOCKS_PER_SEC;
+			glUniform1f(ind, fval);
+			break;
+		case IntTYPE:
+			ival = *((int *) uni->dat);
+			glUniform1i(ind, ival);
+			break;
+		case FloatTYPE:
+			fval = *((float *) uni->dat);
+			glUniform1f(ind, fval);
+			break;
+		case Vec2TYPE:
+			fp = (float *) uni->dat;
+			glUniform2f(ind, fp[0], fp[1]);
+			break;
+		case Vec3TYPE:
+			fp = (float *) uni->dat;
+			glUniform3f(ind, fp[0], fp[1], fp[2]);
+			break;
+		case Vec4TYPE:
+			fp = (float *) uni->dat;
+			glUniform4f(ind, fp[0], fp[1], fp[2], fp[3]);
+			break;
+		case Mat2TYPE:
+			fp = (float *) uni->dat;
+			glUniformMatrix2fv(ind, 1, 0, fp);
+			break;
+		case Mat3TYPE:
+			fp = (float *) uni->dat;
+			glUniformMatrix3fv(ind, 1, 0, fp);
+			break;
+		case Mat4TYPE:
+		case ProjMatTYPE:
+			fp = (float *) uni->dat;
+			glUniformMatrix4fv(ind, 1, 0, fp);
+			break;
+		}
+		uni = uni->next;
+	}
+	
+	len = sizeof(unsigned int) * datdef.ecnt;
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, len, datdef.ent, GL_DYNAMIC_DRAW);
+}
 
 static void delnewline(char *str)
 {
