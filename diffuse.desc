@@ -1,9 +1,12 @@
 GlobalTime time
+GlobalTime tome
 VertPos vp
 Normal nm
 ProjMat proj
 Mat4 wp
 Float rate
-Vec3 clr
+Float cr
+Vec3 clr0
+Vec3 clr1
 Vec3 ldir
 Vec3 rax

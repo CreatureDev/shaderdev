@@ -9,6 +9,7 @@ uniform float time;
 uniform float rate;
 
 out vec3 N;
+out float dist;
 
 vec3 quatrot(in vec3 p, in vec4 q)
 {
@@ -24,5 +25,6 @@ void main()
 	quat.w = cos(time * rate);
 	pos = quatrot(pos, quat);
 	N = quatrot(nm, quat);
+	dist = dot(vp.xy, vp.xy);
 	gl_Position = proj * wp * vec4(pos, 1);
 } 
