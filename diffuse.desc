@@ -1,0 +1,9 @@
+GlobalTime time
+VertPos vp
+Normal nm
+ProjMat proj
+Mat4 wp
+Float rate
+Vec3 clr
+Vec3 ldir
+Vec3 rax

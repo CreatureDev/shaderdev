@@ -21,6 +21,9 @@ void glGenVertexArrays(unsigned int, unsigned int *);
 void glBindVertexArray(unsigned int);
 void glDeleteProgram(unsigned int);
 void glDisable(GLenum);
+void glEnable(GLenum);
+void glCullFace(GLenum);
+void glDepthFunc(GLenum);
 
 #define CHECKTYPE(x) if(!shades.x) {printf("%s shader component not found!\n", #x); exit(-1);}
 
@@ -278,6 +281,9 @@ int main(int argc, char **argv)
 	IMG_Init(IMG_INIT_PNG);
 
 	initwindow(argv[1]);
+	
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
 
 	glClearColor(0.f, 0.f, 0.f, 1.f);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -292,13 +298,14 @@ int main(int argc, char **argv)
 	SDL_GL_SetSwapInterval(1);	
 
 
+	
 	SDL_Event e;
 	for(;;) 
 	{
 		while(SDL_PollEvent(&e))
 			if(e.type == SDL_QUIT) 
 				goto QUITIT;
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		updateshader(glp);
 		rendershader();
 		glFinish();
