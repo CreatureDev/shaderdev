@@ -1,6 +1,6 @@
 VertPos vp
+Vec3 clr0
 GlobalTime time
 Float rate
-Vec3 clr0
-Vec3 clr1
-
+ProjMat proj
+Mat4 wp

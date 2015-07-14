@@ -10,6 +10,24 @@
 #include <string.h>
 #include <time.h>
 
+int glGetUniformLocation(unsigned int, const char *);
+void glUniform1f(int, float);
+void glUniform1i(int, int);
+void glUniform2f(int, float, float);
+void glUniform3f(int, float, float, float);
+void glUniform4f(int, float, float, float, float);
+void glUniformMatrix2fv(int, unsigned int, GLboolean, const void *);
+void glUniformMatrix3fv(int, unsigned int, GLboolean, const void *);
+void glUniformMatrix4fv(int, unsigned int, GLboolean, const void *);
+void glGenBuffers(unsigned int, unsigned int *);
+void glBindBuffer(GLenum, unsigned int);
+void glBufferData(GLenum, unsigned int, const void *, GLenum);
+int glGetAttribLocation(unsigned int, const char *);
+void glEnableVertexAttribArray(unsigned int);
+void glBufferSubData(GLenum, unsigned int, unsigned int, const void *);
+void glVertexAttribPointer(unsigned int, int, GLenum, GLboolean, unsigned int, const void *);
+void glDeleteBuffers(unsigned int, unsigned int *);
+
 #define GLTEXTURE(x) (GL_TEXTURE0 + x)
 
 /*	special snowflake
@@ -122,12 +140,52 @@ void rendershader()
 
 static unsigned int bufs[2];
 
+void freealist(struct alist *dl)
+{
+	if(!dl)
+		return;
+	freealist(dl->next);
+	free(dl->name);
+	free(dl->dat);
+	free(dl);
+}
+
+void freetlist(struct tlist *dl)
+{
+	if(!dl)
+		return;
+	freetlist(dl->next);
+	free(dl->file);
+	free(dl);
+}
+
+void freeulist(struct ulist *dl)
+{
+	if(!dl)
+		return;
+	freeulist(dl->next);
+	free(dl->name);
+	free(dl->dat);
+	free(dl);
+}
+
+void freedesc()
+{
+	glDeleteBuffers(2, bufs);
+	freealist(datdef.al);
+	freetlist(datdef.tl);
+	freeulist(datdef.ul);
+	datdef.al = 0;
+	datdef.tl = 0;
+	datdef.ul = 0;
+}
+
 void bindshaderdat(unsigned int gid, void *rnd)
 {
 	struct alist *atr;
 	struct tlist *tex;
 	struct ulist *uni;
-	unsigned int ind, off, len;
+	unsigned long ind, off, len;
 	SDL_Surface *img;
 	SDL_Texture *txt;
 	float *fp, fval;
@@ -514,7 +572,7 @@ static void askuniformdata()
 			{
 				j = i * 4;
 				printf("what is the value of column %d of Mat4 %s?\n", i, uni->name);
-				printf(buff, 1024, stdin);
+				fgets(buff, 1024, stdin);
 				sscanf(buff, "%f %f %f %f", &fval[j], &fval[j+1], 
 											&fval[j+2], &fval[j+3]);
 			}

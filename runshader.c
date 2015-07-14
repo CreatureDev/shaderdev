@@ -5,6 +5,23 @@
 #include "glext.h"
 #include <stdio.h>
 
+unsigned int glCreateShader(GLenum);
+void glShaderSource(unsigned int, unsigned int, const char **, const int *);
+void glCompileShader(unsigned int);
+void glGetShaderiv(unsigned int, GLenum, int *);
+void glGetShaderInfoLog(unsigned int, unsigned int, unsigned int *, char *);
+void glAttachShader(unsigned int, unsigned int);
+void glDeleteShader(unsigned int);
+unsigned int glCreateProgram();
+void glLinkProgram(unsigned int);
+void glGetProgramiv(unsigned int, GLenum, int *);
+void glGetProgramInfoLog(unsigned int, unsigned int, unsigned int *, char *);
+void glUseProgram(unsigned int);
+void glGenVertexArrays(unsigned int, unsigned int *);
+void glBindVertexArray(unsigned int);
+void glDeleteProgram(unsigned int);
+void glDisable(GLenum);
+
 #define CHECKTYPE(x) if(!shades.x) {printf("%s shader component not found!\n", #x); exit(-1);}
 
 #define NULLTYPE 0
@@ -54,7 +71,7 @@ static void compileattach(const char *shn, unsigned int gt)
 	fread(src, 1, l, fl);
 	fclose(fl);
 	sid = glCreateShader(gt);
-	glShaderSource(sid, 1, &src, 0);
+	glShaderSource(sid, 1, (const char **) &src, 0);
 	glCompileShader(sid);	
 
 	glGetShaderiv(sid, GL_COMPILE_STATUS, &st);
@@ -272,7 +289,8 @@ int main(int argc, char **argv)
 	glBindVertexArray(vao);
 	bindshaderdat(glp, rend);
 
-	SDL_GL_SetSwapInterval(1);
+	SDL_GL_SetSwapInterval(1);	
+
 
 	SDL_Event e;
 	for(;;) 
@@ -289,7 +307,10 @@ int main(int argc, char **argv)
 
 
 QUITIT:
-	
+	glDeleteProgram(glp);
+	freedesc();
+	SDL_GL_DeleteContext(glct);
+	IMG_Quit();
 	SDL_Quit();
 
 	return 0;
