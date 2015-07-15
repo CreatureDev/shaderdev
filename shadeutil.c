@@ -87,7 +87,7 @@ struct alist
 struct tlist
 {
 	unsigned int bind;
-	unsigned int glid;
+	char *name;
 	char *file;
 	struct tlist *next;
 };
@@ -156,6 +156,7 @@ void freetlist(struct tlist *dl)
 		return;
 	freetlist(dl->next);
 	free(dl->file);
+	free(dl->name);
 	free(dl);
 }
 
@@ -227,6 +228,8 @@ void bindshaderdat(unsigned int gid, void *rnd)
 	while(tex)
 	{
 		glActiveTexture(GLTEXTURE(tex->bind));
+		ind = glGetUniformLocation(gid, tex->name);
+		glUniform1i(ind, tex->bind);
 		img = IMG_Load(tex->file);
 		if(!img)
 		{
@@ -240,6 +243,8 @@ void bindshaderdat(unsigned int gid, void *rnd)
 			printf("%s\n", SDL_GetError());
 			exit(-1);
 		}
+		glGenSamplers(1, &ind);
+		glBindSampler(tex->bind, ind);
 		SDL_FreeSurface(img);
 		tex = tex->next;
 	}
@@ -444,7 +449,7 @@ static void asktexturedata()
 	tex = datdef.tl;
 	while(tex)
 	{
-		printf("What texture should be bound to position %u?\n", tex->bind);
+		printf("What texture should be bound at %s?\n", tex->name);
 		fgets(buff, 1024, stdin);
 		delnewline(buff);
 		i = strlen(buff);
@@ -736,20 +741,17 @@ ADDVALUE:
 
 ADDTEXTURE:
 		tel = &datdef.tl;
-		i = atoi(n);
+		i = 0;
 		while(*tel)
 		{
-			if((*tel)->bind == i)
-			{
-				printf("texture bind location %d given twice\n", i);
-				exit(-1);
-			}
+			i++;
 			tel = &(*tel)->next;
 		}
 		
 		*tel = (struct tlist *) malloc(sizeof(struct tlist));
 		(*tel)->bind = i;
-		(*tel)->glid = 0;
+		(*tel)->name = (char *) malloc(strlen(n) + 1);
+		strcpy((*tel)->name, n);
 		(*tel)->file = 0;
 		(*tel)->next = 0;
 GONEXT:

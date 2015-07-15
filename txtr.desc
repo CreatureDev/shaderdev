@@ -1,0 +1,10 @@
+ProjMat proj
+Mat4 wp
+Vec3 rax
+Vec3 ldir
+GlobalTime time
+Float rate
+Normal nm
+VertPos vp
+TexCoord tc
+Texture img
