@@ -2,7 +2,7 @@
 #define __SHADEUTIL_H__
 
 void getshaderdat(const char *dsc);
-void bindshaderdat(unsigned int gid, void *rnd);
+void bindshaderdat(unsigned int gid);
 void updateshader(unsigned int gid);
 void rendershader();
 void freedesc();

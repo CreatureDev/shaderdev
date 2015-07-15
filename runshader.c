@@ -1,5 +1,4 @@
 #include "SDL.h"
-#include "SDL_image.h"
 #include "shadeutil.h"
 #include "gl.h"
 #include "glext.h"
@@ -37,7 +36,6 @@ void glDepthFunc(GLenum);
 #define COMPTYPE 7
 
 static SDL_Window *wind = 0;
-static SDL_Renderer *rend = 0;
 static SDL_GLContext glct = 0;
 
 static unsigned int glp;
@@ -136,7 +134,6 @@ void initwindow(const char *shnm)
 	{
 		if(wind)
 		{
-			SDL_DestroyRenderer(rend);
 			SDL_DestroyWindow(wind);
 			wind = 0;
 		}
@@ -150,7 +147,6 @@ void initwindow(const char *shnm)
 				SDL_WINDOW_FULLSCREEN_DESKTOP |
 				SDL_WINDOW_OPENGL);
 
-		rend = SDL_CreateRenderer(wind, -1, SDL_RENDERER_ACCELERATED);
 		glct = SDL_GL_CreateContext(wind);
 
 		if(glct)
@@ -164,6 +160,11 @@ void initwindow(const char *shnm)
 		{
 			j--;
 		}
+	}
+	if(!i)
+	{
+		printf("Failed to create an OpenGL context\n");
+		exit(-1);
 	}
 }
 
@@ -278,7 +279,7 @@ int main(int argc, char **argv)
 		return -1;
 	}	
 
-	IMG_Init(IMG_INIT_PNG);
+	
 
 	initwindow(argv[1]);
 	
@@ -293,7 +294,7 @@ int main(int argc, char **argv)
 	
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
-	bindshaderdat(glp, rend);
+	bindshaderdat(glp);
 
 	SDL_GL_SetSwapInterval(1);	
 
@@ -317,7 +318,7 @@ QUITIT:
 	glDeleteProgram(glp);
 	freedesc();
 	SDL_GL_DeleteContext(glct);
-	IMG_Quit();
+	
 	SDL_Quit();
 
 	return 0;

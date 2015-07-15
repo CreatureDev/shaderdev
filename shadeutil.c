@@ -1,9 +1,6 @@
 #include "shadeutil.h"
 #include "gl.h"
 #include "glext.h"
-#include "SDL_image.h"
-#include "SDL_surface.h"
-#include "SDL_render.h"
 #include "SDL_error.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -181,14 +178,12 @@ void freedesc()
 	datdef.ul = 0;
 }
 
-void bindshaderdat(unsigned int gid, void *rnd)
+void bindshaderdat(unsigned int gid)
 {
 	struct alist *atr;
 	struct tlist *tex;
 	struct ulist *uni;
 	unsigned long ind, off, len;
-	SDL_Surface *img;
-	SDL_Texture *txt;
 	float *fp, fval;
 	int ival;
 	atr = datdef.al;
@@ -227,25 +222,8 @@ void bindshaderdat(unsigned int gid, void *rnd)
 	tex = datdef.tl;
 	while(tex)
 	{
-		glActiveTexture(GLTEXTURE(tex->bind));
-		ind = glGetUniformLocation(gid, tex->name);
-		glUniform1i(ind, tex->bind);
-		img = IMG_Load(tex->file);
-		if(!img)
-		{
-			printf("failed to load texture %s\n", tex->file);
-			exit(-1);
-		}
-		txt = SDL_CreateTextureFromSurface(rnd, img);
-		if(SDL_GL_BindTexture(txt, 0, 0))
-		{
-			printf("filed to bind texture %s to opengl\n", tex->file);
-			printf("%s\n", SDL_GetError());
-			exit(-1);
-		}
-		glGenSamplers(1, &ind);
-		glBindSampler(tex->bind, ind);
-		SDL_FreeSurface(img);
+		printf("Image loading is not currently supported\n");
+		
 		tex = tex->next;
 	}
 
