@@ -15,3 +15,4 @@ test_shader:runshader.o $(OBJ)
 
 clean:
 	/bin/rm -f *.o a.out $(PRG)
+

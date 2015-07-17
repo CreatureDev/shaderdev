@@ -233,8 +233,7 @@ void bindshaderdat(unsigned int gid)
 		glBindTexture(GL_TEXTURE_2D, i);
 	
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		printf("%d %d\n", tex->dat->w, tex->dat->h);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);	
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 
 			tex->dat->w, tex->dat->h, 0, GL_RGBA,
 			GL_UNSIGNED_INT_8_8_8_8, tex->dat->pix);
