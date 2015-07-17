@@ -235,9 +235,9 @@ void bindshaderdat(unsigned int gid)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		printf("%d %d\n", tex->dat->w, tex->dat->h);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 
 			tex->dat->w, tex->dat->h, 0, GL_RGBA,
-			GL_UNSIGNED_INT_8_8_8_8_REV, tex->dat->pix);
+			GL_UNSIGNED_INT_8_8_8_8, tex->dat->pix);
 		ind = glGetUniformLocation(gid, tex->name);
 		glUniform1i(ind, tex->bind);	
 		tex = tex->next;
