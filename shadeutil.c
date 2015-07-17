@@ -1,11 +1,14 @@
 #include "shadeutil.h"
+#include "texture.h"
+#include "cibutil.h"
 #include "gl.h"
-#include "glext.h"
+
 #include "SDL_error.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
 
 int glGetUniformLocation(unsigned int, const char *);
 void glUniform1f(int, float);
@@ -38,7 +41,8 @@ void glDeleteBuffers(unsigned int, unsigned int *);
  *	VALUE
  *		GlobalTime
  *		Int
- *		Float
+ rameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);*		Float
  *		Vec(2, 3, 4)
  *		Mat(2, 3, 4)
 */
@@ -85,7 +89,7 @@ struct tlist
 {
 	unsigned int bind;
 	char *name;
-	char *file;
+	struct texture *dat;
 	struct tlist *next;
 };
 
@@ -152,7 +156,7 @@ void freetlist(struct tlist *dl)
 	if(!dl)
 		return;
 	freetlist(dl->next);
-	free(dl->file);
+	freetexture(dl->dat);
 	free(dl->name);
 	free(dl);
 }
@@ -184,6 +188,7 @@ void bindshaderdat(unsigned int gid)
 	struct tlist *tex;
 	struct ulist *uni;
 	unsigned long ind, off, len;
+	unsigned int i;
 	float *fp, fval;
 	int ival;
 	atr = datdef.al;
@@ -219,11 +224,22 @@ void bindshaderdat(unsigned int gid)
 		atr = atr->next;
 	}
 	
+	glEnable(GL_TEXTURE_2D);
 	tex = datdef.tl;
 	while(tex)
 	{
-		printf("Image loading is not currently supported\n");
-		
+		glGenTextures(1, &i);
+		glActiveTexture(GLTEXTURE(tex->bind));
+		glBindTexture(GL_TEXTURE_2D, i);
+	
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		printf("%d %d\n", tex->dat->w, tex->dat->h);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 
+			tex->dat->w, tex->dat->h, 0, GL_RGBA,
+			GL_UNSIGNED_INT_8_8_8_8_REV, tex->dat->pix);
+		ind = glGetUniformLocation(gid, tex->name);
+		glUniform1i(ind, tex->bind);	
 		tex = tex->next;
 	}
 
@@ -436,13 +452,12 @@ static void asktexturedata()
 			printf("invalid texture name %s\n", buff);
 			exit(-1);
 		}
-		if(strcmp(".png", &buff[i-4]))
+		if(strcmp(".cib", &buff[i-4]))
 		{
-			printf("textures must be in png format\n");
+			printf("textures must be in cib format\n");
 			exit(-1);
 		}
-		tex->file = (char *) malloc(i + 1);
-		strcpy(tex->file, buff);
+		tex->dat = loadcib((const char *) buff);
 		tex = tex->next;
 	}
 }
@@ -719,7 +734,7 @@ ADDVALUE:
 
 ADDTEXTURE:
 		tel = &datdef.tl;
-		i = 0;
+		i = 1;
 		while(*tel)
 		{
 			i++;
@@ -730,7 +745,7 @@ ADDTEXTURE:
 		(*tel)->bind = i;
 		(*tel)->name = (char *) malloc(strlen(n) + 1);
 		strcpy((*tel)->name, n);
-		(*tel)->file = 0;
+		(*tel)->dat = 0;
 		(*tel)->next = 0;
 GONEXT:
 		continue;
