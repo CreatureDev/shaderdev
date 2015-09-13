@@ -1,6 +1,7 @@
 #ifndef __SHADEUTIL2_H__
 #define __SHADEUTIL2_H__
 
+
 struct dlist
 {
 	unsigned int id;
@@ -12,10 +13,7 @@ struct dlist
 struct shaderdesc
 {
 	char *name;
-	struct dlist *al;
-	struct dlist *tl;
-	struct dlist *ul;
-	struct dlist *bl;
+	struct dlist *vl;
 };
 
 #endif /* __SHADEUTIL2_H__ */
