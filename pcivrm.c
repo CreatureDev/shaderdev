@@ -8,28 +8,23 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 
+#define ADDR (0xc237ffff)
+
 static struct pci_context ctx = {0};
+
 static const void *mem = (void *) 0xc2370000;
 
 #define ASSERT(x) void *j[2] = {&&ERR, &&GOOD}; goto *j[(x)];
 
-
-int getdevinfo()
+int snipecode(const char *pth)
 {
-	unsigned int i, r;
-	cl_device_id *dev;
-	cl_device_topology_amd t;
-	clGetContextInfo(ctx.clc, CL_CONTEXT_NUM_DEVICES, sizeof(i), &i, 0);
-	r = i * sizeof(cl_device_id);
-	dev = (cl_device_id *) alloca(r);
-	clGetContextInfo(ctx.clc, CL_CONTEXT_DEVICES, r, dev, 0);
 	
-	
-	
-	return 0;	
 }
 
+int loadcode()
+{
 
+}e
 
 #define MAP_FLG (MAP_ANONYMOUS | MAP_PRIVATE)
 
@@ -44,6 +39,5 @@ GOOD:
 }
 
 #undef ASSERT
-
 #undef MAP_FLG
 
