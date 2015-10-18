@@ -1,8 +1,8 @@
 #ifndef _PCIVRM_H__
 #define _PCIVRM_H__
 
-int pcivrm_init();
-int getdevinfo();
+int init_pcivrm();
+void getdevnames(char **, int, int);
 
 #endif /* _PCIVRM_H__ */
 

@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include "context.h"
 
+
 #define err_state(x) (((x) >> 31) & 1)
 #define non_zero(x) (*((unsigned int *) &(x)) | ((unsigned long) (x) >> 32))
 #define zero_neg(x) (((x) % ((x) - 1)) - 1)
@@ -32,7 +33,7 @@ static int build_glcontext(struct pci_context *c)
 	return (err_ptr(c->wind) | err_ptr(c->rend) | err_ptr(c->glc));
 }
 
-static int build_clcontext(struct pci_context *c)
+static int claim_devices(struct pci_context *c)
 {	
 	unsigned int i;
 	cl_platform_id p;
@@ -45,9 +46,14 @@ static int build_clcontext(struct pci_context *c)
 	return err_ptr(c->clc);
 }
 
+int bind_system(void *dat)
+{
+	return claim_devices(dat);
+}
+
 int build_context(struct pci_context *c)
 {
-	return build_glcontext(c) | build_clcontext(c);
+	
 }
 
 #undef err_state

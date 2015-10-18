@@ -1,13 +1,13 @@
 #include "bsptree.h"
 #include <stdlib.h>
 
-struct bsptree *newbsp(int *ps, int *dm)
+struct bsptree *newbsp(int *ps)
 {
 	struct bsptree *ret = calloc(1, sizeof(struct bsptree));
 	ret->pos[0] = ps[0];
 	ret->pos[1] = ps[1];
-	ret->dim[0] = dm[0];
-	ret->dim[1] = dm[1];
+
+
 	return ret;
 }
 

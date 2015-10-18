@@ -8,7 +8,7 @@ struct bsptree
 	int pos[2];
 };
 
-struct bsptree *newbsp(int *ps, int *dm);
+struct bsptree *newbsp(int *ps);
 void freebsp(struct bsptree *q);
 void splitbsp(struct bsptree *q);
 
